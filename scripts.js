@@ -51,15 +51,29 @@ let recognition = null;
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
-        isAdmin = (user.email === ADMIN_EMAIL);
-        showMainApp();
-        initializeApp();
+        if (user.email === ADMIN_EMAIL) {
+            isAdmin = true;
+            finishLogin();
+        } else {
+            database.ref(`users/${user.uid}/role`).once('value').then(snapshot => {
+                isAdmin = (snapshot.val() === 'admin');
+                finishLogin();
+            }).catch(() => {
+                isAdmin = false;
+                finishLogin();
+            });
+        }
     } else {
         currentUser = null;
         isAdmin = false;
         showLoginScreen();
     }
 });
+
+function finishLogin() {
+    showMainApp();
+    initializeApp();
+}
 
 function showLoginScreen() {
     document.getElementById('loginScreen').style.display = 'flex';
@@ -88,6 +102,12 @@ function updateUserUI() {
     const migrationSection = document.getElementById('adminMigrationSection');
     if (migrationSection) {
         migrationSection.style.display = isAdmin ? 'block' : 'none';
+    }
+
+    // Mostrar panel de usuarios si es admin
+    const usersSection = document.getElementById('adminUsersSection');
+    if (usersSection) {
+        usersSection.style.display = isAdmin ? 'block' : 'none';
     }
 }
 
@@ -233,6 +253,87 @@ function showProfile() {
 
 function closeProfileModal() {
     document.getElementById('profileModal').classList.add('hidden');
+}
+
+function showUsersPanel() {
+    hideUserMenu();
+    document.getElementById('usersModal').classList.remove('hidden');
+    loadUsersAdmin();
+}
+
+function closeUsersPanel() {
+    document.getElementById('usersModal').classList.add('hidden');
+}
+
+function loadUsersAdmin() {
+    if (!isAdmin) return;
+
+    database.ref('users').once('value').then(snapshot => {
+        const usersData = snapshot.val();
+        if (!usersData) return;
+
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = '';
+
+        // Convert to array and sort by date descending
+        const usersArray = Object.keys(usersData).map(uid => ({
+            uid,
+            ...usersData[uid]
+        })).sort((a, b) => b.createdAt - a.createdAt);
+
+        usersArray.forEach(u => {
+            const isSuperAdmin = u.email === ADMIN_EMAIL;
+
+            let roleSelect = '';
+            if (isSuperAdmin) {
+                roleSelect = '<span class="text-xs font-bold text-gray-500">Super Admin</span>';
+            } else {
+                roleSelect = `
+                    <select onchange="changeUserRole('${u.uid}', this.value)" class="text-xs bg-gray-50 border border-gray-300 text-gray-900 rounded focus:ring-blue-500 focus:border-blue-500 block p-1">
+                        <option value="user" ${u.role !== 'admin' ? 'selected' : ''}>Usuario</option>
+                        <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Administrador</option>
+                    </select>
+                `;
+            }
+
+            const tr = document.createElement('tr');
+            tr.className = "border-b hover:bg-gray-50";
+            tr.innerHTML = `
+                <td class="px-4 py-3 font-medium text-gray-900">${u.name || 'Sin nombre'}</td>
+                <td class="px-4 py-3">${u.email}</td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-1 text-[10px] rounded-full font-medium ${u.role === 'admin' || isSuperAdmin ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">
+                        ${isSuperAdmin ? 'SUPER ADMIN' : (u.role === 'admin' ? 'ADMINISTRADOR' : 'USUARIO')}
+                    </span>
+                </td>
+                <td class="px-4 py-3">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
+                <td class="px-4 py-3 text-right">${roleSelect}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }).catch(err => {
+        showToast('Error cargando usuarios', 'error');
+        console.error(err);
+    });
+}
+
+function changeUserRole(uid, newRole) {
+    if (!isAdmin) return;
+
+    if (!confirm(`¿Estás seguro de cambiar el rol a ${newRole.toUpperCase()}?`)) {
+        loadUsersAdmin(); // Reset select visual state
+        return;
+    }
+
+    database.ref(`users/${uid}/role`).set(newRole)
+        .then(() => {
+            showToast('Rol actualizado correctamente', 'success');
+            loadUsersAdmin();
+        })
+        .catch(err => {
+            showToast('Error al cambiar rol', 'error');
+            console.error(err);
+        });
 }
 
 function showSettings() {
