@@ -1201,7 +1201,12 @@ function updateStatus(id, newStatus) {
         usuario: currentUser.displayName || currentUser.email
     });
 
-    recordsRef.child(id).update({ estado: newStatus, historial: historial })
+    const updateData = { estado: newStatus, historial: historial };
+    if (newStatus !== 'resuelto') {
+        updateData.firmaCierre = null;
+    }
+
+    recordsRef.child(id).update(updateData)
         .then(() => showToast('Estado actualizado', 'success'))
         .catch(err => showToast('Error', 'error'));
 }
