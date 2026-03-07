@@ -1,566 +1,43 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Control VOSO Pro</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
+
+    <!-- Leaflet Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- SheetJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
-    <!-- jsPDF -->
+
+    <!-- jsPDF & AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <style>
-        * { box-sizing: border-box; }
-        
-        html, body {
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-        }
-        
-        .app-container {
-            max-width: 100vw;
-            overflow-x: hidden;
-        }
-        
-        .gradient-bg { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-        }
-        
-        .compact-card {
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-        }
-        
-        @media (min-width: 768px) {
-            .compact-card {
-                padding: 1rem;
-                border-radius: 0.75rem;
-            }
-        }
-        
-        .text-responsive-sm { font-size: 0.75rem; }
-        .text-responsive-base { font-size: 0.875rem; }
-        
-        @media (min-width: 768px) {
-            .text-responsive-sm { font-size: 0.875rem; }
-            .text-responsive-base { font-size: 1rem; }
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
-        }
-        
-        @media (min-width: 640px) {
-            .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 0.75rem;
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .stats-grid {
-                gap: 1rem;
-            }
-        }
-        
-        .main-layout {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-        
-        @media (min-width: 1024px) {
-            .main-layout {
-                grid-template-columns: 320px 1fr;
-                gap: 1.5rem;
-            }
-        }
-        
-        @media (min-width: 1280px) {
-            .main-layout {
-                grid-template-columns: 380px 1fr;
-            }
-        }
-        
-        .form-sticky {
-            position: static;
-            max-height: none;
-        }
-        
-        @media (min-width: 1024px) {
-            .form-sticky {
-                position: sticky;
-                top: 5rem;
-                max-height: calc(100vh - 6rem);
-                overflow-y: auto;
-            }
-        }
-        
-        .form-sticky::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .form-sticky::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        
-        .form-sticky::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-        
-        .animate-fade-in { 
-            animation: fadeIn 0.3s ease-in; 
-        }
-        
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(5px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-        
-        .card-hover { 
-            transition: all 0.2s ease; 
-        }
-        
-        .card-hover:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 4px 12px -2px rgba(0,0,0,0.1); 
-        }
-        
-        .loading-spinner { 
-            border: 3px solid #f3f3f3; 
-            border-top: 3px solid #3498db; 
-            border-radius: 50%; 
-            width: 32px; 
-            height: 32px; 
-            animation: spin 1s linear infinite; 
-        }
-        
-        @keyframes spin { 
-            0% { transform: rotate(0deg); } 
-            100% { transform: rotate(360deg); } 
-        }
-        
-        .sync-indicator { 
-            animation: pulse 2s infinite; 
-        }
-        
-        @keyframes pulse { 
-            0%, 100% { opacity: 1; } 
-            50% { opacity: 0.5; } 
-        }
-        
-        .toast {
-            position: fixed;
-            bottom: 16px;
-            right: 16px;
-            padding: 12px 16px;
-            border-radius: 6px;
-            color: white;
-            font-weight: 500;
-            font-size: 0.875rem;
-            z-index: 9999;
-            transform: translateX(400px);
-            transition: transform 0.3s ease;
-            max-width: 320px;
-            word-wrap: break-word;
-        }
-        
-        .toast.show { 
-            transform: translateX(0); 
-        }
-        
-        .severity-btn-compact {
-            padding: 0.375rem 0.25rem;
-            font-size: 0.625rem;
-        }
-        
-        @media (min-width: 640px) {
-            .severity-btn-compact {
-                padding: 0.5rem 0.5rem;
-                font-size: 0.75rem;
-            }
-        }
-        
-        .img-preview {
-            max-height: 120px;
-        }
-        
-        @media (min-width: 768px) {
-            .img-preview {
-                max-height: 160px;
-            }
-        }
-        
-        #signaturePad { 
-            touch-action: none; 
-            cursor: crosshair;
-            max-width: 100%;
-            height: auto;
-        }
-        
-        .dark-mode { 
-            filter: invert(1) hue-rotate(180deg); 
-            background-color: #1a1a1a;
-        }
-        
-        .dark-mode img, 
-        .dark-mode .gradient-bg, 
-        .dark-mode canvas { 
-            filter: invert(1) hue-rotate(180deg); 
-        }
-        
-        .offline-banner {
-            background: #f59e0b;
-            color: white;
-            text-align: center;
-            padding: 6px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        
-        #notifPanel {
-            width: 280px;
-        }
-        
-        @media (min-width: 640px) {
-            #notifPanel {
-                width: 320px;
-            }
-        }
-        
-        ::-webkit-scrollbar { 
-            width: 6px; 
-            height: 6px; 
-        }
-        
-        ::-webkit-scrollbar-track { 
-            background: #f1f1f1; 
-        }
-        
-        ::-webkit-scrollbar-thumb { 
-            background: #c1c1c1; 
-            border-radius: 3px; 
-        }
-        
-        .input-compact {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-        }
-        
-        @media (min-width: 768px) {
-            .input-compact {
-                padding: 0.625rem 1rem;
-            }
-        }
-        
-        .space-y-compact > * + * {
-            margin-top: 0.75rem;
-        }
-        
-        @media (min-width: 768px) {
-            .space-y-compact > * + * {
-                margin-top: 1.25rem;
-            }
-        }
 
-        #exportMenu {
-            margin-top: 4px;
-        }
-        
-        #exportMenu::before {
-            content: '';
-            position: absolute;
-            top: -6px;
-            right: 16px;
-            width: 12px;
-            height: 12px;
-            background: white;
-            transform: rotate(45deg);
-            border-left: 1px solid #e5e7eb;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        /* Login Styles */
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 1rem;
-        }
-
-        .login-box {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 100%;
-            max-width: 420px;
-            overflow: hidden;
-            animation: slideUp 0.5s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .login-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .login-body {
-            padding: 2rem;
-        }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-
-        .input-group i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #9ca3af;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 0.875rem 1rem 0.875rem 2.75rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.75rem;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 0.875rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 0.75rem;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-login:active {
-            transform: translateY(0);
-        }
-
-        .toggle-mode {
-            text-align: center;
-            margin-top: 1.5rem;
-            color: #6b7280;
-            font-size: 0.875rem;
-        }
-
-        .toggle-mode button {
-            background: none;
-            border: none;
-            color: #667eea;
-            font-weight: 600;
-            cursor: pointer;
-            margin-left: 0.25rem;
-        }
-
-        .toggle-mode button:hover {
-            text-decoration: underline;
-        }
-
-        .error-message {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-            display: none;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .error-message.show {
-            display: flex;
-        }
-
-        .user-menu {
-            position: relative;
-        }
-
-        .user-dropdown {
-            position: absolute;
-            right: 0;
-            top: 100%;
-            margin-top: 0.5rem;
-            background: white;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            min-width: 200px;
-            padding: 0.5rem;
-            display: none;
-            z-index: 100;
-        }
-
-        .user-dropdown.show {
-            display: block;
-            animation: fadeIn 0.2s ease;
-        }
-
-        .user-dropdown-item {
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            color: #374151;
-            font-size: 0.875rem;
-            transition: background 0.2s;
-        }
-
-        .user-dropdown-item:hover {
-            background: #f3f4f6;
-        }
-
-        .user-dropdown-divider {
-            height: 1px;
-            background: #e5e7eb;
-            margin: 0.5rem 0;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-
-        /* Estilos para los sentidos - CORREGIDO */
-        .sentidos-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
-        }
-
-        .sentido-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 0.5rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.75rem;
-            color: #6b7280;
-            font-weight: 500;
-        }
-
-        .sentido-btn:hover {
-            border-color: #d1d5db;
-            background: #f9fafb;
-            transform: translateY(-1px);
-        }
-
-        .sentido-btn.active {
-            border-color: #667eea;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        .sentido-btn i {
-            font-size: 1.25rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .sentido-btn.active i {
-            color: white;
-        }
-
-        @media (min-width: 640px) {
-            .sentidos-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
-            .sentido-btn {
-                padding: 1rem 0.5rem;
-                font-size: 0.875rem;
-            }
-            
-            .sentido-btn i {
-                font-size: 1.5rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    <script src="scripts.js" defer></script>
 </head>
+
 <body class="bg-gray-50 text-gray-800 antialiased app-container">
 
     <!-- LOGIN SCREEN -->
@@ -573,7 +50,7 @@
                 <h1 class="text-2xl font-bold mb-1">Control VOSO Pro</h1>
                 <p class="text-white/80 text-sm">Sistema de Verificación Operacional</p>
             </div>
-            
+
             <div class="login-body">
                 <div id="loginError" class="error-message">
                     <i class="fas fa-exclamation-circle"></i>
@@ -583,12 +60,14 @@
                 <form id="loginForm">
                     <div class="input-group">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" id="loginEmail" placeholder="Correo electrónico" required autocomplete="email">
+                        <input type="email" id="loginEmail" placeholder="Correo electrónico" required
+                            autocomplete="email">
                     </div>
-                    
+
                     <div class="input-group">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="loginPassword" placeholder="Contraseña" required autocomplete="current-password">
+                        <input type="password" id="loginPassword" placeholder="Contraseña" required
+                            autocomplete="current-password">
                     </div>
 
                     <button type="submit" class="btn-login" id="loginBtn">
@@ -604,12 +83,14 @@
 
                     <div class="input-group">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" id="regEmail" placeholder="Correo electrónico" required autocomplete="email">
+                        <input type="email" id="regEmail" placeholder="Correo electrónico" required
+                            autocomplete="email">
                     </div>
-                    
+
                     <div class="input-group">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="regPassword" placeholder="Contraseña (mín. 6 caracteres)" required minlength="6">
+                        <input type="password" id="regPassword" placeholder="Contraseña (mín. 6 caracteres)" required
+                            minlength="6">
                     </div>
 
                     <div class="input-group">
@@ -652,46 +133,56 @@
                             <p class="text-xs text-white/80 hidden sm:block truncate">Verificación Operacional</p>
                         </div>
                     </div>
-                    
+
                     <!-- Acciones -->
                     <div class="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
                         <!-- Sync Status -->
-                        <div id="syncStatus" class="flex items-center gap-1.5 bg-white/20 px-2 py-1 rounded-full text-xs">
+                        <div id="syncStatus"
+                            class="flex items-center gap-1.5 bg-white/20 px-2 py-1 rounded-full text-xs">
                             <div class="w-1.5 h-1.5 bg-green-400 rounded-full sync-indicator" id="syncDot"></div>
                             <span class="hidden sm:inline" id="syncText">Online</span>
                         </div>
-                        
+
                         <!-- Notificaciones -->
-                        <button onclick="showNotifications()" class="relative bg-white/20 hover:bg-white/30 p-1.5 rounded-lg transition">
+                        <button onclick="showNotifications()"
+                            class="relative bg-white/20 hover:bg-white/30 p-1.5 rounded-lg transition">
                             <i class="fas fa-bell text-sm"></i>
-                            <span id="notifBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full hidden">0</span>
+                            <span id="notifBadge"
+                                class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full hidden">0</span>
                         </button>
-                        
+
                         <!-- Tema -->
-                        <button onclick="toggleDarkMode()" class="bg-white/20 hover:bg-white/30 p-1.5 rounded-lg transition">
+                        <button onclick="toggleDarkMode()"
+                            class="bg-white/20 hover:bg-white/30 p-1.5 rounded-lg transition">
                             <i class="fas fa-moon text-sm" id="themeIcon"></i>
                         </button>
-                        
+
                         <!-- Exportar -->
                         <div class="relative" id="exportMenuContainer">
-                            <button onclick="toggleExportMenu()" id="exportBtn" class="bg-white/20 hover:bg-white/30 px-2 py-1.5 rounded-lg transition text-xs md:text-sm flex items-center gap-1">
+                            <button onclick="toggleExportMenu()" id="exportBtn"
+                                class="bg-white/20 hover:bg-white/30 px-2 py-1.5 rounded-lg transition text-xs md:text-sm flex items-center gap-1">
                                 <i class="fas fa-download"></i>
                                 <span class="hidden md:inline">Exportar</span>
-                                <i class="fas fa-chevron-down text-xs ml-1 transition-transform duration-200" id="exportChevron"></i>
+                                <i class="fas fa-chevron-down text-xs ml-1 transition-transform duration-200"
+                                    id="exportChevron"></i>
                             </button>
-                            
-                            <div id="exportMenu" class="absolute right-0 top-full w-48 bg-white rounded-lg shadow-xl py-1 hidden z-50 border border-gray-100">
-                                <button onclick="exportToExcel(); hideExportMenu();" class="relative w-full text-left px-4 py-2.5 hover:bg-gray-50 text-gray-800 flex items-center gap-3 text-sm transition-colors">
+
+                            <div id="exportMenu"
+                                class="absolute right-0 top-full w-48 bg-white rounded-lg shadow-xl py-1 hidden z-50 border border-gray-100">
+                                <button onclick="exportToExcel(); hideExportMenu();"
+                                    class="relative w-full text-left px-4 py-2.5 hover:bg-gray-50 text-gray-800 flex items-center gap-3 text-sm transition-colors">
                                     <i class="fas fa-file-excel text-green-600 w-5 text-center"></i>
                                     <span>Exportar Excel</span>
                                 </button>
                                 <div class="border-t border-gray-100"></div>
-                                <button onclick="exportToPDF(); hideExportMenu();" class="relative w-full text-left px-4 py-2.5 hover:bg-gray-50 text-gray-800 flex items-center gap-3 text-sm transition-colors">
+                                <button onclick="exportToPDF(); hideExportMenu();"
+                                    class="relative w-full text-left px-4 py-2.5 hover:bg-gray-50 text-gray-800 flex items-center gap-3 text-sm transition-colors">
                                     <i class="fas fa-file-pdf text-red-600 w-5 text-center"></i>
                                     <span>Exportar PDF</span>
                                 </button>
                                 <div class="border-t border-gray-100"></div>
-                                <button onclick="exportToJSON(); hideExportMenu();" class="relative w-full text-left px-4 py-2.5 hover:bg-gray-50 text-gray-800 flex items-center gap-3 text-sm transition-colors">
+                                <button onclick="exportToJSON(); hideExportMenu();"
+                                    class="relative w-full text-left px-4 py-2.5 hover:bg-gray-50 text-gray-800 flex items-center gap-3 text-sm transition-colors">
                                     <i class="fas fa-file-code text-blue-600 w-5 text-center"></i>
                                     <span>Backup JSON</span>
                                 </button>
@@ -700,12 +191,13 @@
 
                         <!-- User Menu -->
                         <div class="user-menu">
-                            <button onclick="toggleUserMenu()" class="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-2 py-1.5 rounded-lg transition">
+                            <button onclick="toggleUserMenu()"
+                                class="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-2 py-1.5 rounded-lg transition">
                                 <div class="user-avatar" id="userAvatar">U</div>
                                 <span class="hidden md:inline text-sm font-medium" id="userName">Usuario</span>
                                 <i class="fas fa-chevron-down text-xs"></i>
                             </button>
-                            
+
                             <div id="userDropdown" class="user-dropdown">
                                 <div class="px-4 py-2 border-b border-gray-100">
                                     <p class="font-semibold text-gray-900" id="dropdownUserName">Usuario</p>
@@ -739,7 +231,8 @@
         </header>
 
         <!-- Panel Notificaciones -->
-        <div id="notifPanel" class="fixed right-0 top-0 h-full bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
+        <div id="notifPanel"
+            class="fixed right-0 top-0 h-full bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
             <div class="p-3 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
                 <h3 class="font-bold text-base">Notificaciones</h3>
                 <button onclick="hideNotifications()" class="text-gray-500 hover:text-gray-700 p-1">
@@ -758,10 +251,11 @@
 
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto px-3 py-4 md:px-4 md:py-6">
-            
+
             <!-- Stats Grid -->
             <div class="stats-grid mb-4 md:mb-6">
-                <div class="bg-white compact-card shadow-sm border border-gray-100 card-hover cursor-pointer" onclick="filterByStatus('all')">
+                <div class="bg-white glass-panel compact-card shadow-sm border border-gray-100 card-hover cursor-pointer"
+                    onclick="filterByStatus('all')">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-xs font-medium">Total</p>
@@ -772,8 +266,9 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="bg-white compact-card shadow-sm border border-gray-100 card-hover cursor-pointer" onclick="filterByStatus('pendiente')">
+
+                <div class="bg-white glass-panel compact-card shadow-sm border border-gray-100 card-hover cursor-pointer"
+                    onclick="filterByStatus('pendiente')">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-xs font-medium">Pendientes</p>
@@ -784,8 +279,9 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="bg-white compact-card shadow-sm border border-gray-100 card-hover cursor-pointer" onclick="filterByStatus('resuelto')">
+
+                <div class="bg-white glass-panel compact-card shadow-sm border border-gray-100 card-hover cursor-pointer"
+                    onclick="filterByStatus('resuelto')">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-xs font-medium">Resueltos</p>
@@ -796,8 +292,8 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="bg-white compact-card shadow-sm border border-gray-100 card-hover">
+
+                <div class="bg-white glass-panel compact-card shadow-sm border border-gray-100 card-hover">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-xs font-medium">Equipos</p>
@@ -812,17 +308,18 @@
 
             <!-- Gráficos -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4 md:mb-6">
-                <div class="lg:col-span-1 bg-white rounded-lg p-3 md:p-4 shadow-sm border border-gray-100">
+                <div class="lg:col-span-1 bg-white glass-panel rounded-lg p-3 md:p-4 shadow-sm border border-gray-100">
                     <h3 class="text-xs font-medium text-gray-700 mb-2">Por Severidad</h3>
                     <div class="h-32 md:h-40">
                         <canvas id="severityChart"></canvas>
                     </div>
                 </div>
-                
-                <div class="lg:col-span-2 bg-white rounded-lg p-3 md:p-4 shadow-sm border border-gray-100">
+
+                <div class="lg:col-span-2 bg-white glass-panel rounded-lg p-3 md:p-4 shadow-sm border border-gray-100">
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="text-xs font-medium text-gray-700">Tendencia</h3>
-                        <select id="chartPeriod" onchange="updateTrendChart()" class="text-xs border border-gray-300 rounded px-2 py-1">
+                        <select id="chartPeriod" onchange="updateTrendChart()"
+                            class="text-xs border border-gray-300 rounded px-2 py-1">
                             <option value="7">7 días</option>
                             <option value="30" selected>30 días</option>
                             <option value="90">3 meses</option>
@@ -836,29 +333,33 @@
 
             <!-- Layout Principal -->
             <div class="main-layout">
-                
+
                 <!-- Formulario -->
                 <div class="form-sticky">
-                    <div class="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-                        <div class="bg-gray-50 px-3 py-2 md:px-4 md:py-3 border-b border-gray-100 flex justify-between items-center">
+                    <div class="bg-white glass-panel rounded-lg shadow-md border border-gray-100 overflow-hidden">
+                        <div
+                            class="bg-gray-50 px-3 py-2 md:px-4 md:py-3 border-b border-gray-100 flex justify-between items-center">
                             <h2 class="text-sm md:text-base font-semibold text-gray-800 flex items-center gap-2">
                                 <i class="fas fa-plus-circle text-blue-600"></i>
                                 Nuevo Registro
                             </h2>
-                            <button onclick="getLocation()" class="text-blue-600 hover:text-blue-800 text-xs md:text-sm" title="GPS">
+                            <button onclick="getLocation()" class="text-blue-600 hover:text-blue-800 text-xs md:text-sm"
+                                title="GPS">
                                 <i class="fas fa-map-marker-alt"></i>
                             </button>
                         </div>
-                        
+
                         <form id="vosoForm" class="p-3 md:p-4 space-y-compact">
-                            
+
                             <div>
                                 <label class="block text-xs font-medium text-gray-700 mb-1.5">Tipo</label>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <button type="button" onclick="setTipo('equipo')" id="btnEquipo" class="tipo-btn py-2 px-2 rounded-md border-2 border-blue-500 bg-blue-50 text-blue-700 text-xs font-medium transition">
+                                    <button type="button" onclick="setTipo('equipo')" id="btnEquipo"
+                                        class="tipo-btn py-2 px-2 rounded-md border-2 border-blue-500 bg-blue-50 text-blue-700 text-xs font-medium transition">
                                         <i class="fas fa-cog mr-1"></i>Equipo
                                     </button>
-                                    <button type="button" onclick="setTipo('area')" id="btnArea" class="tipo-btn py-2 px-2 rounded-md border-2 border-gray-200 text-gray-600 text-xs font-medium transition hover:border-gray-300">
+                                    <button type="button" onclick="setTipo('area')" id="btnArea"
+                                        class="tipo-btn py-2 px-2 rounded-md border-2 border-gray-200 text-gray-600 text-xs font-medium transition hover:border-gray-300">
                                         <i class="fas fa-building mr-1"></i>Área
                                     </button>
                                 </div>
@@ -873,10 +374,11 @@
                                 <div class="relative">
                                     <input type="text" id="nombre" required
                                         class="w-full input-compact border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                        placeholder="Ej: Compresor A1"
-                                        oninput="searchEquipos(this.value)"
+                                        placeholder="Ej: Compresor A1" oninput="searchEquipos(this.value)"
                                         autocomplete="off">
-                                    <div id="searchResults" class="absolute z-10 w-full bg-white border border-gray-200 rounded-md mt-0.5 shadow-lg hidden max-h-32 overflow-y-auto text-xs"></div>
+                                    <div id="searchResults"
+                                        class="absolute z-10 w-full bg-white border border-gray-200 rounded-md mt-0.5 shadow-lg hidden max-h-32 overflow-y-auto text-xs">
+                                    </div>
                                 </div>
                             </div>
 
@@ -887,7 +389,7 @@
                                         <i class="fas fa-satellite-dish"></i>
                                     </span>
                                 </label>
-                                <input type="text" id="ubicacion" 
+                                <input type="text" id="ubicacion"
                                     class="w-full input-compact border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                     placeholder="Planta Norte">
                                 <input type="hidden" id="gpsCoords">
@@ -895,21 +397,26 @@
 
                             <!-- NUEVO: Inspección por Sentidos - CORREGIDO -->
                             <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-2">Inspección por Sentidos <span class="text-gray-400 font-normal">(selecciona uno o más)</span></label>
+                                <label class="block text-xs font-medium text-gray-700 mb-2">Inspección por Sentidos
+                                    <span class="text-gray-400 font-normal">(selecciona uno o más)</span></label>
                                 <div class="sentidos-grid">
-                                    <button type="button" onclick="toggleSentido('ver')" class="sentido-btn" data-sentido="ver">
+                                    <button type="button" onclick="toggleSentido('ver')" class="sentido-btn"
+                                        data-sentido="ver">
                                         <i class="fas fa-eye"></i>
                                         <span>Ver</span>
                                     </button>
-                                    <button type="button" onclick="toggleSentido('oir')" class="sentido-btn" data-sentido="oir">
+                                    <button type="button" onclick="toggleSentido('oir')" class="sentido-btn"
+                                        data-sentido="oir">
                                         <i class="fas fa-ear-listen"></i>
                                         <span>Oír</span>
                                     </button>
-                                    <button type="button" onclick="toggleSentido('sentir')" class="sentido-btn" data-sentido="sentir">
+                                    <button type="button" onclick="toggleSentido('sentir')" class="sentido-btn"
+                                        data-sentido="sentir">
                                         <i class="fas fa-hand-sparkles"></i>
                                         <span>Sentir</span>
                                     </button>
-                                    <button type="button" onclick="toggleSentido('oler')" class="sentido-btn" data-sentido="oler">
+                                    <button type="button" onclick="toggleSentido('oler')" class="sentido-btn"
+                                        data-sentido="oler">
                                         <i class="fas fa-wind"></i>
                                         <span>Oler</span>
                                     </button>
@@ -934,41 +441,65 @@
                             <div>
                                 <label class="block text-xs font-medium text-gray-700 mb-1.5">Severidad</label>
                                 <div class="grid grid-cols-4 gap-1">
-                                    <button type="button" onclick="setSeveridad('baja')" class="severity-btn-compact rounded-md border-2 border-gray-200 font-medium transition" data-value="baja">🟢</button>
-                                    <button type="button" onclick="setSeveridad('media')" class="severity-btn-compact rounded-md border-2 border-gray-200 font-medium transition" data-value="media">🟡</button>
-                                    <button type="button" onclick="setSeveridad('alta')" class="severity-btn-compact rounded-md border-2 border-gray-200 font-medium transition" data-value="alta">🟠</button>
-                                    <button type="button" onclick="setSeveridad('critica')" class="severity-btn-compact rounded-md border-2 border-gray-200 font-medium transition" data-value="critica">🔴</button>
+                                    <button type="button" onclick="setSeveridad('baja')"
+                                        class="severity-btn-compact rounded-md border-2 border-gray-200 font-medium transition"
+                                        data-value="baja">🟢</button>
+                                    <button type="button" onclick="setSeveridad('media')"
+                                        class="severity-btn-compact rounded-md border-2 border-gray-200 font-medium transition"
+                                        data-value="media">🟡</button>
+                                    <button type="button" onclick="setSeveridad('alta')"
+                                        class="severity-btn-compact rounded-md border-2 border-gray-200 font-medium transition"
+                                        data-value="alta">🟠</button>
+                                    <button type="button" onclick="setSeveridad('critica')"
+                                        class="severity-btn-compact rounded-md border-2 border-gray-200 font-medium transition"
+                                        data-value="critica">🔴</button>
                                 </div>
                                 <input type="hidden" id="severidad" value="">
                             </div>
 
                             <div>
                                 <label class="block text-xs font-medium text-gray-700 mb-1">Descripción</label>
-                                <textarea id="descripcion" rows="2" required
-                                    class="w-full input-compact border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
-                                    placeholder="Describa la falla..."></textarea>
+                                <div class="relative">
+                                    <textarea id="descripcion" rows="2" required
+                                        class="w-full input-compact border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none pr-10"
+                                        placeholder="Describa la falla..."></textarea>
+                                    <button type="button" onclick="startVoice('descripcion')" class="voice-btn"
+                                        title="Dictar por voz">
+                                        <i class="fas fa-microphone"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div>
                                 <label class="block text-xs font-medium text-gray-700 mb-1">Acciones sugeridas</label>
-                                <textarea id="acciones" rows="2"
-                                    class="w-full input-compact border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
-                                    placeholder="¿Qué hacer?"></textarea>
+                                <div class="relative">
+                                    <textarea id="acciones" rows="2"
+                                        class="w-full input-compact border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none pr-10"
+                                        placeholder="¿Qué hacer?"></textarea>
+                                    <button type="button" onclick="startVoice('acciones')" class="voice-btn"
+                                        title="Dictar por voz">
+                                        <i class="fas fa-microphone"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div>
                                 <label class="block text-xs font-medium text-gray-700 mb-1">Evidencia</label>
                                 <div class="relative">
-                                    <input type="file" id="imagen" accept="image/*" class="hidden" onchange="previewImage(this)" capture="environment">
-                                    <label for="imagen" 
+                                    <input type="file" id="imagen" accept="image/*" class="hidden"
+                                        onchange="previewImage(this)" capture="environment">
+                                    <label for="imagen"
                                         class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition group">
                                         <div class="text-center" id="uploadPlaceholder">
-                                            <i class="fas fa-camera text-2xl text-gray-400 group-hover:text-blue-500 mb-1"></i>
+                                            <i
+                                                class="fas fa-camera text-2xl text-gray-400 group-hover:text-blue-500 mb-1"></i>
                                             <p class="text-xs text-gray-500">Click o cámara</p>
                                         </div>
-                                        <img id="imagePreview" class="hidden w-full h-full object-cover rounded-md img-preview">
+                                        <img id="imagePreview"
+                                            class="hidden w-full h-full object-cover rounded-md img-preview">
                                     </label>
-                                    <button type="button" id="removeImage" onclick="removeImage()" class="hidden absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition w-6 h-6 flex items-center justify-center">
+                                    <button type="button" id="removeImage" onclick="removeImage()"
+                                        class="hidden absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition w-6 h-6 flex items-center justify-center">
                                         <i class="fas fa-times text-xs"></i>
                                     </button>
                                 </div>
@@ -986,7 +517,7 @@
                                 <i class="fas fa-save"></i>
                                 <span>Guardar</span>
                             </button>
-                            
+
                             <div id="pendingSync" class="hidden text-center text-xs text-orange-600">
                                 <i class="fas fa-sync-alt fa-spin mr-1"></i>
                                 Pendiente sync...
@@ -997,39 +528,52 @@
 
                 <!-- Listado -->
                 <div>
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-2.5 md:p-3 mb-3">
-                        <div class="flex flex-wrap gap-2 items-end">
-                            <div class="flex-1 min-w-[140px]">
-                                <label class="block text-xs font-medium text-gray-500 mb-1">Buscar</label>
-                                <div class="relative">
-                                    <i class="fas fa-search absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
-                                    <input type="text" id="searchFilter" onkeyup="filterRecords()"
-                                        class="w-full pl-8 pr-2 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        placeholder="Buscar...">
+                    <div class="bg-white glass-panel rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
+                        <div class="flex border-b border-gray-100 mb-3">
+                            <div onclick="switchListView('list')" id="tabList" class="nav-tab active">Lista</div>
+                            <div onclick="switchListView('map')" id="tabMap" class="nav-tab">Mapa Interactivo</div>
+                        </div>
+
+                        <div id="recordsView" class="">
+                            <div class="flex flex-wrap gap-2 items-end mb-3">
+                                <div class="flex-1 min-w-[140px]">
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Buscar</label>
+                                    <div class="relative">
+                                        <i
+                                            class="fas fa-search absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                                        <input type="text" id="searchFilter" onkeyup="filterRecords()"
+                                            class="w-full pl-8 pr-2 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="Buscar...">
+                                    </div>
+                                </div>
+                                <div class="w-28">
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Estado</label>
+                                    <select id="statusFilter" onchange="filterRecords()"
+                                        class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white">
+                                        <option value="todos">Todos</option>
+                                        <option value="pendiente">Pendiente</option>
+                                        <option value="en_proceso">En Proceso</option>
+                                        <option value="resuelto">Resuelto</option>
+                                    </select>
+                                </div>
+                                <div class="w-28">
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Severidad</label>
+                                    <select id="severityFilter" onchange="filterRecords()"
+                                        class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white">
+                                        <option value="todas">Todas</option>
+                                        <option value="baja">Baja</option>
+                                        <option value="media">Media</option>
+                                        <option value="alta">Alta</option>
+                                        <option value="critica">Crítica</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="w-28">
-                                <label class="block text-xs font-medium text-gray-500 mb-1">Estado</label>
-                                <select id="statusFilter" onchange="filterRecords()" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white">
-                                    <option value="todos">Todos</option>
-                                    <option value="pendiente">Pendiente</option>
-                                    <option value="en_proceso">En Proceso</option>
-                                    <option value="resuelto">Resuelto</option>
-                                </select>
-                            </div>
-                            <div class="w-28">
-                                <label class="block text-xs font-medium text-gray-500 mb-1">Severidad</label>
-                                <select id="severityFilter" onchange="filterRecords()" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white">
-                                    <option value="todas">Todas</option>
-                                    <option value="baja">Baja</option>
-                                    <option value="media">Media</option>
-                                    <option value="alta">Alta</option>
-                                    <option value="critica">Crítica</option>
-                                </select>
-                            </div>
-                            <button onclick="clearFilters()" class="px-3 py-1.5 text-gray-600 hover:text-gray-800 text-xs font-medium border border-gray-300 rounded-md">
-                                Limpiar
-                            </button>
+                        </div>
+
+                        <div id="mapView" class="hidden animate-fade-in">
+                            <div id="mapContainer" class="border border-gray-200"></div>
+                            <p class="text-[10px] text-gray-400 mt-2 text-center">* Solo se muestran registros con
+                                coordenadas GPS</p>
                         </div>
                     </div>
 
@@ -1037,7 +581,8 @@
                     </div>
 
                     <div id="emptyState" class="hidden text-center py-8 md:py-12">
-                        <div class="bg-gray-100 rounded-full w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-3">
+                        <div
+                            class="bg-gray-100 rounded-full w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-3">
                             <i class="fas fa-clipboard-list text-2xl md:text-3xl text-gray-400"></i>
                         </div>
                         <h3 class="text-sm md:text-base font-medium text-gray-900">No hay registros</h3>
@@ -1052,15 +597,19 @@
             <div class="bg-white rounded-lg p-4 w-full max-w-md">
                 <h3 class="text-base font-bold mb-2">Firma de Cierre</h3>
                 <p class="text-xs text-gray-600 mb-3">Firme para confirmar resolución</p>
-                <canvas id="signaturePad" width="400" height="150" class="border-2 border-gray-300 rounded-lg w-full touch-none bg-white"></canvas>
+                <canvas id="signaturePad" width="400" height="150"
+                    class="border-2 border-gray-300 rounded-lg w-full touch-none bg-white"></canvas>
                 <div class="flex gap-2 mt-3">
-                    <button onclick="clearSignature()" class="flex-1 py-2 border border-gray-300 rounded-md text-xs font-medium hover:bg-gray-50">
+                    <button onclick="clearSignature()"
+                        class="flex-1 py-2 border border-gray-300 rounded-md text-xs font-medium hover:bg-gray-50">
                         Limpiar
                     </button>
-                    <button onclick="closeWithoutSignature()" class="flex-1 py-2 border border-gray-300 rounded-md text-xs font-medium hover:bg-gray-50">
+                    <button onclick="closeWithoutSignature()"
+                        class="flex-1 py-2 border border-gray-300 rounded-md text-xs font-medium hover:bg-gray-50">
                         Cancelar
                     </button>
-                    <button onclick="saveSignature()" class="flex-1 py-2 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700">
+                    <button onclick="saveSignature()"
+                        class="flex-1 py-2 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700">
                         Confirmar
                     </button>
                 </div>
@@ -1068,14 +617,17 @@
         </div>
 
         <!-- Modal Imagen -->
-        <div id="imageModal" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-4" onclick="closeImageModal()">
+        <div id="imageModal" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-4"
+            onclick="closeImageModal()">
             <div class="relative w-full max-w-3xl">
-                <button onclick="closeImageModal()" class="absolute -top-10 right-0 text-white hover:text-gray-300 text-2xl">
+                <button onclick="closeImageModal()"
+                    class="absolute -top-10 right-0 text-white hover:text-gray-300 text-2xl">
                     <i class="fas fa-times"></i>
                 </button>
                 <img id="modalImage" src="" alt="Vista" class="w-full rounded-lg max-h-[70vh] object-contain bg-black">
                 <div class="mt-3 text-center">
-                    <a id="downloadImageBtn" href="#" download class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-md hover:bg-white/30 transition text-sm">
+                    <a id="downloadImageBtn" href="#" download
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-md hover:bg-white/30 transition text-sm">
                         <i class="fas fa-download"></i>Descargar
                     </a>
                 </div>
@@ -1092,7 +644,8 @@
                     </button>
                 </div>
                 <div class="text-center mb-4">
-                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 text-white text-2xl font-bold" id="profileAvatar">
+                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 text-white text-2xl font-bold"
+                        id="profileAvatar">
                         U
                     </div>
                     <h4 class="font-semibold text-lg" id="profileName">Usuario</h4>
@@ -1114,1311 +667,7 @@
 
     <div id="toastContainer"></div>
 
-    <script>
-        // ==========================================
-        // CONFIGURACIÓN FIREBASE
-        // ==========================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyAo9Nlk-yJz4UkAlvgX6my_ww3MR-qO6-Q",
-            authDomain: "voso-sistema-f81c4.firebaseapp.com",
-            databaseURL: "https://voso-sistema-f81c4-default-rtdb.firebaseio.com",
-            projectId: "voso-sistema-f81c4",
-            storageBucket: "voso-sistema-f81c4.firebasestorage.app",
-            messagingSenderId: "385854966826",
-            appId: "1:385854966826:web:182e9d68ac20e3eede8753"
-        };
 
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const auth = firebase.auth();
-        let recordsRef = null;
-        
-        const ADMIN_EMAIL = 'miguel@polpaico.cl';
-        let isAdmin = false;
-        let currentUser = null;
-        let records = [];
-        let offlineRecords = JSON.parse(localStorage.getItem('offlineVOSO')) || [];
-        let currentImage = null;
-        let isOnline = true;
-        let currentRecordId = null;
-        let severityChart = null;
-        let trendChart = null;
-        let isLoginMode = true;
-
-        // ==========================================
-        // AUTENTICACIÓN
-        // ==========================================
-
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                currentUser = user;
-                isAdmin = (user.email === ADMIN_EMAIL);
-                showMainApp();
-                initializeApp();
-            } else {
-                currentUser = null;
-                isAdmin = false;
-                showLoginScreen();
-            }
-        });
-
-        function showLoginScreen() {
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('mainApp').style.display = 'none';
-        }
-
-        function showMainApp() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            updateUserUI();
-        }
-
-        function updateUserUI() {
-            if (!currentUser) return;
-            
-            const displayName = currentUser.displayName || currentUser.email.split('@')[0];
-            const initials = displayName.charAt(0).toUpperCase();
-            
-            document.getElementById('userAvatar').textContent = initials;
-            document.getElementById('userName').textContent = displayName + (isAdmin ? ' (Admin)' : '');
-            document.getElementById('dropdownUserName').textContent = displayName + (isAdmin ? ' ⭐ Admin' : '');
-            document.getElementById('dropdownUserEmail').textContent = currentUser.email;
-            document.getElementById('reportadoPor').value = displayName;
-            
-            // Mostrar botón de migración si es admin
-            const migrationSection = document.getElementById('adminMigrationSection');
-            if (migrationSection) {
-                migrationSection.style.display = isAdmin ? 'block' : 'none';
-            }
-        }
-
-        function toggleAuthMode() {
-            isLoginMode = !isLoginMode;
-            const loginForm = document.getElementById('loginForm');
-            const registerForm = document.getElementById('registerForm');
-            const toggleText = document.getElementById('toggleText');
-            const toggleBtn = document.getElementById('toggleBtn');
-            
-            if (isLoginMode) {
-                loginForm.style.display = 'block';
-                registerForm.style.display = 'none';
-                toggleText.textContent = '¿No tienes cuenta?';
-                toggleBtn.textContent = 'Regístrate';
-            } else {
-                loginForm.style.display = 'none';
-                registerForm.style.display = 'block';
-                toggleText.textContent = '¿Ya tienes cuenta?';
-                toggleBtn.textContent = 'Inicia sesión';
-            }
-            hideError();
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('loginError');
-            document.getElementById('errorText').textContent = message;
-            errorDiv.classList.add('show');
-        }
-
-        function hideError() {
-            document.getElementById('loginError').classList.remove('show');
-        }
-
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideError();
-            
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const btn = document.getElementById('loginBtn');
-            
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Ingresando...';
-            
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-            } catch (error) {
-                let message = 'Error al iniciar sesión';
-                switch(error.code) {
-                    case 'auth/user-not-found': message = 'Usuario no encontrado'; break;
-                    case 'auth/wrong-password': message = 'Contraseña incorrecta'; break;
-                    case 'auth/invalid-email': message = 'Email inválido'; break;
-                    case 'auth/user-disabled': message = 'Usuario deshabilitado'; break;
-                }
-                showError(message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Iniciar Sesión</span>';
-            }
-        });
-
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideError();
-            
-            const name = document.getElementById('regName').value;
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-            const passwordConfirm = document.getElementById('regPasswordConfirm').value;
-            const btn = document.getElementById('registerBtn');
-            
-            if (password !== passwordConfirm) {
-                showError('Las contraseñas no coinciden');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showError('La contraseña debe tener al menos 6 caracteres');
-                return;
-            }
-            
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creando cuenta...';
-            
-            try {
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                await userCredential.user.updateProfile({ displayName: name });
-                
-                await database.ref(`users/${userCredential.user.uid}`).set({
-                    name: name,
-                    email: email,
-                    createdAt: Date.now(),
-                    role: 'user'
-                });
-                
-                showToast('Cuenta creada exitosamente', 'success');
-            } catch (error) {
-                let message = 'Error al crear cuenta';
-                switch(error.code) {
-                    case 'auth/email-already-in-use': message = 'Este email ya está registrado'; break;
-                    case 'auth/invalid-email': message = 'Email inválido'; break;
-                    case 'auth/weak-password': message = 'Contraseña muy débil'; break;
-                }
-                showError(message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Crear Cuenta</span>';
-            }
-        });
-
-        function logout() {
-            if (confirm('¿Cerrar sesión?')) {
-                auth.signOut().then(() => {
-                    showToast('Sesión cerrada', 'info');
-                }).catch((error) => {
-                    showToast('Error al cerrar sesión', 'error');
-                });
-            }
-        }
-
-        function toggleUserMenu() {
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.classList.toggle('show');
-        }
-
-        function showProfile() {
-            hideUserMenu();
-            const modal = document.getElementById('profileModal');
-            const displayName = currentUser.displayName || currentUser.email.split('@')[0];
-            const initials = displayName.charAt(0).toUpperCase();
-            
-            document.getElementById('profileAvatar').textContent = initials;
-            document.getElementById('profileName').textContent = displayName;
-            document.getElementById('profileEmail').textContent = currentUser.email;
-            document.getElementById('profileDate').textContent = new Date(currentUser.metadata.creationTime).toLocaleDateString();
-            
-            const userRecords = records.filter(r => r.createdBy === currentUser.uid || r.reportadoPor === displayName);
-            document.getElementById('profileRecords').textContent = userRecords.length;
-            
-            modal.classList.remove('hidden');
-        }
-
-        function closeProfileModal() {
-            document.getElementById('profileModal').classList.add('hidden');
-        }
-
-        function showSettings() {
-            hideUserMenu();
-            showToast('Configuración próximamente', 'info');
-        }
-
-        function hideUserMenu() {
-            document.getElementById('userDropdown').classList.remove('show');
-        }
-
-        // ==========================================
-        // INICIALIZACIÓN APP
-        // ==========================================
-
-        function initializeApp() {
-            recordsRef = database.ref('voso_records');
-            
-            updateDateTime();
-            setInterval(updateDateTime, 1000);
-            setSeveridad('media');
-            initCharts();
-            checkOnlineStatus();
-            
-            recordsRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                records = data ? Object.values(data) : [];
-                
-                const pendingOffline = offlineRecords.filter(r => !records.find(rec => rec.id === r.id));
-                records = [...records, ...pendingOffline];
-                
-                renderRecords();
-                updateStats();
-                updateCharts();
-                document.getElementById('loadingOverlay').classList.add('hidden');
-                updateSyncStatus(true);
-            }, (error) => {
-                console.error('Error:', error);
-                document.getElementById('loadingOverlay').classList.add('hidden');
-                updateSyncStatus(false);
-                loadFromLocalStorage();
-            });
-
-            window.addEventListener('online', () => {
-                isOnline = true;
-                updateSyncStatus(true);
-                syncOfflineRecords();
-                showToast('Conexión restaurada', 'success');
-            });
-            
-            window.addEventListener('offline', () => {
-                isOnline = false;
-                updateSyncStatus(false);
-                showToast('Modo offline', 'warning');
-            });
-
-            initSignaturePad();
-            
-            document.addEventListener('click', function(e) {
-                const exportContainer = document.getElementById('exportMenuContainer');
-                if (exportContainer && !exportContainer.contains(e.target)) {
-                    hideExportMenu();
-                }
-                
-                const notifPanel = document.getElementById('notifPanel');
-                const notifBtn = e.target.closest('button[onclick="showNotifications()"]');
-                if (notifPanel && !notifPanel.contains(e.target) && !notifBtn && !notifPanel.classList.contains('translate-x-full')) {
-                    hideNotifications();
-                }
-
-                const userMenu = document.querySelector('.user-menu');
-                if (userMenu && !userMenu.contains(e.target)) {
-                    hideUserMenu();
-                }
-            });
-        }
-
-        // ==========================================
-        // CONTROL DE MENÚS
-        // ==========================================
-
-        function toggleExportMenu() {
-            const menu = document.getElementById('exportMenu');
-            const chevron = document.getElementById('exportChevron');
-            const isHidden = menu.classList.contains('hidden');
-            
-            hideNotifications();
-            hideUserMenu();
-            
-            if (isHidden) {
-                menu.classList.remove('hidden');
-                chevron.style.transform = 'rotate(180deg)';
-            } else {
-                hideExportMenu();
-            }
-        }
-
-        function hideExportMenu() {
-            const menu = document.getElementById('exportMenu');
-            const chevron = document.getElementById('exportChevron');
-            if (menu) menu.classList.add('hidden');
-            if (chevron) chevron.style.transform = 'rotate(0deg)';
-        }
-
-        function showNotifications() {
-            hideExportMenu();
-            hideUserMenu();
-            document.getElementById('notifPanel').classList.remove('translate-x-full');
-            loadNotifications();
-        }
-
-        function hideNotifications() {
-            document.getElementById('notifPanel').classList.add('translate-x-full');
-        }
-
-        // ==========================================
-        // FUNCIONES CORE
-        // ==========================================
-
-        function checkOnlineStatus() {
-            isOnline = navigator.onLine;
-            updateSyncStatus(isOnline);
-            if (!isOnline) {
-                document.getElementById('offlineBanner').classList.remove('hidden');
-                loadFromLocalStorage();
-            }
-        }
-
-        function updateSyncStatus(online) {
-            const dot = document.getElementById('syncDot');
-            const text = document.getElementById('syncText');
-            const banner = document.getElementById('offlineBanner');
-            
-            if (online) {
-                dot.className = 'w-1.5 h-1.5 bg-green-400 rounded-full sync-indicator';
-                text.textContent = 'Online';
-                banner.classList.add('hidden');
-            } else {
-                dot.className = 'w-1.5 h-1.5 bg-red-400 rounded-full';
-                text.textContent = 'Offline';
-                banner.classList.remove('hidden');
-            }
-        }
-
-        function updateDateTime() {}
-
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const icon = document.getElementById('themeIcon');
-            if (document.body.classList.contains('dark-mode')) {
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
-                localStorage.setItem('theme', 'light');
-            }
-        }
-
-        if (localStorage.getItem('theme') === 'dark') toggleDarkMode();
-
-        function showToast(message, type = 'info', duration = 3000) {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'} mr-2"></i>${message}`;
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 100);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, duration);
-        }
-
-        function loadNotifications() {
-            const list = document.getElementById('notifList');
-            const critical = records.filter(r => r.severidad === 'critica' && r.estado !== 'resuelto');
-            
-            if (critical.length === 0) {
-                list.innerHTML = '<p class="text-gray-500 text-center py-4 text-sm">Sin notificaciones</p>';
-                return;
-            }
-            
-            list.innerHTML = critical.map(r => `
-                <div class="bg-red-50 border-l-4 border-red-500 p-2 rounded text-xs cursor-pointer hover:bg-red-100" onclick="focusRecord(${r.id})">
-                    <p class="font-semibold text-red-800">Crítica: ${r.nombre}</p>
-                    <p class="text-red-700">${new Date(r.fecha).toLocaleDateString()}</p>
-                </div>
-            `).join('');
-            
-            const badge = document.getElementById('notifBadge');
-            badge.textContent = critical.length;
-            badge.classList.remove('hidden');
-        }
-
-        function focusRecord(id) {
-            hideNotifications();
-            const record = records.find(r => r.id === id);
-            if (record) {
-                document.getElementById('searchFilter').value = record.nombre;
-                filterRecords();
-                showToast(`Mostrando: ${record.nombre}`, 'info');
-            }
-        }
-
-        function loadFromLocalStorage() {
-            const localData = localStorage.getItem(`voso_backup_${currentUser?.uid || 'guest'}`);
-            if (localData) {
-                records = JSON.parse(localData);
-                renderRecords();
-                updateStats();
-                updateCharts();
-            }
-        }
-
-        function syncOfflineRecords() {
-            if (offlineRecords.length > 0 && isOnline && currentUser) {
-                let syncCount = 0;
-                offlineRecords.forEach(record => {
-                    delete record.syncPending;
-                    recordsRef.child(record.id).set(record)
-                        .then(() => {
-                            syncCount++;
-                            if (syncCount === offlineRecords.length) {
-                                offlineRecords = [];
-                                localStorage.removeItem('offlineVOSO');
-                                showToast(`${syncCount} registros sincronizados`, 'success');
-                            }
-                        })
-                        .catch(err => console.error('Error sync:', err));
-                });
-            }
-        }
-
-        // ==========================================
-        // FORMULARIO
-        // ==========================================
-
-        function setTipo(tipo) {
-            document.getElementById('tipoRegistro').value = tipo;
-            document.getElementById('labelNombre').textContent = tipo === 'equipo' ? 'Equipo' : 'Área';
-            document.getElementById('nombre').placeholder = tipo === 'equipo' ? 'Ej: Compresor A1' : 'Ej: Taller 3';
-            
-            document.querySelectorAll('.tipo-btn').forEach(btn => {
-                btn.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-700');
-                btn.classList.add('border-gray-200', 'text-gray-600');
-            });
-            
-            const activeBtn = document.getElementById(tipo === 'equipo' ? 'btnEquipo' : 'btnArea');
-            activeBtn.classList.remove('border-gray-200', 'text-gray-600');
-            activeBtn.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
-        }
-
-        // CORREGIDO: Toggle sentidos - ahora usa data-sentido
-        function toggleSentido(sentido) {
-            // Buscar el botón por el atributo data-sentido
-            const btn = document.querySelector(`.sentido-btn[data-sentido="${sentido}"]`);
-            const input = document.getElementById('sentidosSeleccionados');
-            let seleccionados = input.value ? input.value.split(',') : [];
-            
-            if (seleccionados.includes(sentido)) {
-                // Deseleccionar
-                seleccionados = seleccionados.filter(s => s !== sentido);
-                if (btn) {
-                    btn.classList.remove('active');
-                }
-            } else {
-                // Seleccionar
-                seleccionados.push(sentido);
-                if (btn) {
-                    btn.classList.add('active');
-                }
-            }
-            
-            input.value = seleccionados.join(',');
-            console.log('Sentidos seleccionados:', input.value); // Debug
-        }
-
-        function setSeveridad(level) {
-            document.getElementById('severidad').value = level;
-            const colors = {
-                baja: ['border-green-500', 'bg-green-50'],
-                media: ['border-yellow-500', 'bg-yellow-50'],
-                alta: ['border-orange-500', 'bg-orange-50'],
-                critica: ['border-red-500', 'bg-red-50']
-            };
-            
-            document.querySelectorAll('[data-value]').forEach(btn => {
-                btn.className = 'severity-btn-compact rounded-md border-2 border-gray-200 font-medium transition';
-            });
-            
-            const activeBtn = document.querySelector(`[data-value="${level}"]`);
-            if (activeBtn && colors[level]) {
-                activeBtn.classList.remove('border-gray-200');
-                activeBtn.classList.add(...colors[level]);
-            }
-        }
-
-        function searchEquipos(query) {
-            const resultsDiv = document.getElementById('searchResults');
-            if (!query) {
-                resultsDiv.classList.add('hidden');
-                return;
-            }
-            
-            const matches = [...new Set(records.map(r => r.nombre))]
-                .filter(name => name.toLowerCase().includes(query.toLowerCase()))
-                .slice(0, 5);
-            
-            if (matches.length > 0) {
-                resultsDiv.innerHTML = matches.map(m => `
-                    <div class="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0" onclick="selectEquipo('${m}')">${m}</div>
-                `).join('');
-                resultsDiv.classList.remove('hidden');
-            } else {
-                resultsDiv.classList.add('hidden');
-            }
-        }
-
-        function selectEquipo(name) {
-            document.getElementById('nombre').value = name;
-            document.getElementById('searchResults').classList.add('hidden');
-        }
-
-        function getLocation() {
-            if ("geolocation" in navigator) {
-                showToast('Obteniendo GPS...', 'info');
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const coords = `${position.coords.latitude.toFixed(6)},${position.coords.longitude.toFixed(6)}`;
-                        document.getElementById('gpsCoords').value = coords;
-                        document.getElementById('gpsIndicator').classList.remove('hidden');
-                        showToast(`GPS: ${coords}`, 'success');
-                    },
-                    (error) => showToast('Error GPS', 'error'),
-                    { enableHighAccuracy: true, timeout: 10000 }
-                );
-            } else {
-                showToast('GPS no disponible', 'warning');
-            }
-        }
-
-        function previewImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const maxWidth = 800;
-                        const scale = Math.min(maxWidth / img.width, 1);
-                        canvas.width = img.width * scale;
-                        canvas.height = img.height * scale;
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        currentImage = canvas.toDataURL('image/jpeg', 0.7);
-                        
-                        const preview = document.getElementById('imagePreview');
-                        const placeholder = document.getElementById('uploadPlaceholder');
-                        const removeBtn = document.getElementById('removeImage');
-                        
-                        preview.src = currentImage;
-                        preview.classList.remove('hidden');
-                        placeholder.classList.add('hidden');
-                        removeBtn.classList.remove('hidden');
-                    };
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function removeImage() {
-            currentImage = null;
-            document.getElementById('imagen').value = '';
-            document.getElementById('imagePreview').classList.add('hidden');
-            document.getElementById('uploadPlaceholder').classList.remove('hidden');
-            document.getElementById('removeImage').classList.add('hidden');
-        }
-
-        document.getElementById('vosoForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            if (!currentUser) {
-                showToast('Debes iniciar sesión', 'error');
-                return;
-            }
-            
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
-            
-            const record = {
-                id: Date.now(),
-                tipo: document.getElementById('tipoRegistro').value,
-                nombre: document.getElementById('nombre').value,
-                ubicacion: document.getElementById('ubicacion').value,
-                gpsCoords: document.getElementById('gpsCoords').value,
-                sentidos: document.getElementById('sentidosSeleccionados').value.split(',').filter(s => s),
-                tipoAnomalia: document.getElementById('tipoAnomalia').value,
-                severidad: document.getElementById('severidad').value,
-                descripcion: document.getElementById('descripcion').value,
-                acciones: document.getElementById('acciones').value,
-                imagen: currentImage,
-                reportadoPor: document.getElementById('reportadoPor').value,
-                fecha: new Date().toISOString(),
-                estado: 'pendiente',
-                createdBy: currentUser.uid,
-                createdByEmail: currentUser.email,
-                historial: [{ fecha: new Date().toISOString(), accion: 'creado', usuario: document.getElementById('reportadoPor').value }]
-            };
-            
-            if (!isOnline) {
-                record.syncPending = true;
-                offlineRecords.push(record);
-                localStorage.setItem('offlineVOSO', JSON.stringify(offlineRecords));
-                records.push(record);
-                renderRecords();
-                updateStats();
-                updateCharts();
-                showToast('Guardado localmente', 'warning');
-                document.getElementById('pendingSync').classList.remove('hidden');
-            } else {
-                recordsRef.child(record.id).set(record)
-                    .then(() => {
-                        if (record.severidad === 'critica') createNotification(record);
-                        showToast('Guardado exitosamente', 'success');
-                    })
-                    .catch((error) => {
-                        showToast('Error: ' + error.message, 'error');
-                        offlineRecords.push(record);
-                        localStorage.setItem('offlineVOSO', JSON.stringify(offlineRecords));
-                    });
-            }
-            
-            this.reset();
-            removeImage();
-            setSeveridad('media');
-            setTipo('equipo');
-            resetSentidos();
-            document.getElementById('gpsIndicator').classList.add('hidden');
-            const displayName = currentUser.displayName || currentUser.email.split('@')[0];
-            document.getElementById('reportadoPor').value = displayName;
-            
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Guardar';
-        });
-
-        function resetSentidos() {
-            document.getElementById('sentidosSeleccionados').value = '';
-            document.querySelectorAll('.sentido-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-        }
-
-        function createNotification(record) {
-            database.ref('notifications').push({
-                type: 'critical',
-                message: `Crítica: ${record.nombre}`,
-                recordId: record.id,
-                createdBy: currentUser.uid,
-                createdByEmail: currentUser.email,
-                timestamp: Date.now(),
-                read: false
-            });
-        }
-
-        // ==========================================
-        // FIRMA DIGITAL
-        // ==========================================
-
-        function initSignaturePad() {
-            const canvas = document.getElementById('signaturePad');
-            if (!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            let drawing = false;
-            
-            function getPos(e) {
-                const rect = canvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                return {
-                    x: (clientX - rect.left) * (canvas.width / rect.width),
-                    y: (clientY - rect.top) * (canvas.height / rect.height)
-                };
-            }
-            
-            function start(e) {
-                drawing = true;
-                const pos = getPos(e);
-                ctx.beginPath();
-                ctx.moveTo(pos.x, pos.y);
-                e.preventDefault();
-            }
-            
-            function move(e) {
-                if (!drawing) return;
-                const pos = getPos(e);
-                ctx.lineTo(pos.x, pos.y);
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
-                ctx.lineCap = 'round';
-                ctx.stroke();
-                e.preventDefault();
-            }
-            
-            function stop() {
-                drawing = false;
-            }
-            
-            canvas.addEventListener('mousedown', start);
-            canvas.addEventListener('mousemove', move);
-            canvas.addEventListener('mouseup', stop);
-            canvas.addEventListener('mouseout', stop);
-            canvas.addEventListener('touchstart', start);
-            canvas.addEventListener('touchmove', move);
-            canvas.addEventListener('touchend', stop);
-        }
-
-        function clearSignature() {
-            const canvas = document.getElementById('signaturePad');
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-
-        function closeWithoutSignature() {
-            document.getElementById('signatureModal').classList.add('hidden');
-            currentRecordId = null;
-        }
-
-        function saveSignature() {
-            const canvas = document.getElementById('signaturePad');
-            const signatureData = canvas.toDataURL();
-            
-            if (currentRecordId && currentUser) {
-                const record = records.find(r => r.id === currentRecordId);
-                const historial = record.historial || [];
-                historial.push({ 
-                    fecha: new Date().toISOString(), 
-                    accion: 'resuelto', 
-                    usuario: currentUser.displayName || currentUser.email 
-                });
-                
-                recordsRef.child(currentRecordId).update({
-                    estado: 'resuelto',
-                    firmaCierre: signatureData,
-                    fechaCierre: new Date().toISOString(),
-                    historial: historial
-                }).then(() => {
-                    showToast('Cerrado con firma', 'success');
-                    document.getElementById('signatureModal').classList.add('hidden');
-                    currentRecordId = null;
-                });
-            }
-        }
-
-        // ==========================================
-        // GRÁFICOS
-        // ==========================================
-
-        function initCharts() {
-            const ctx1 = document.getElementById('severityChart').getContext('2d');
-            severityChart = new Chart(ctx1, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Baja', 'Media', 'Alta', 'Crítica'],
-                    datasets: [{
-                        data: [0, 0, 0, 0],
-                        backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#ef4444'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            position: 'bottom', 
-                            labels: { 
-                                boxWidth: 10, 
-                                font: { size: 10 },
-                                padding: 10
-                            } 
-                        }
-                    }
-                }
-            });
-            
-            const ctx2 = document.getElementById('trendChart').getContext('2d');
-            trendChart = new Chart(ctx2, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Anomalías',
-                        data: [],
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        x: { ticks: { font: { size: 9 } } },
-                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 9 } } }
-                    }
-                }
-            });
-        }
-
-        function updateCharts() {
-            const severidadCounts = {
-                baja: records.filter(r => r.severidad === 'baja').length,
-                media: records.filter(r => r.severidad === 'media').length,
-                alta: records.filter(r => r.severidad === 'alta').length,
-                critica: records.filter(r => r.severidad === 'critica').length
-            };
-            
-            severityChart.data.datasets[0].data = [
-                severidadCounts.baja,
-                severidadCounts.media,
-                severidadCounts.alta,
-                severidadCounts.critica
-            ];
-            severityChart.update();
-            
-            updateTrendChart();
-        }
-
-        function updateTrendChart() {
-            const days = parseInt(document.getElementById('chartPeriod').value);
-            const labels = [];
-            const data = [];
-            
-            for (let i = days - 1; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
-                labels.push(dateStr);
-                
-                const count = records.filter(r => {
-                    const rDate = new Date(r.fecha);
-                    return rDate.toDateString() === date.toDateString();
-                }).length;
-                data.push(count);
-            }
-            
-            trendChart.data.labels = labels;
-            trendChart.data.datasets[0].data = data;
-            trendChart.update();
-        }
-
-        // ==========================================
-        // LISTADO
-        // ==========================================
-
-        function renderRecords() {
-            const container = document.getElementById('recordsList');
-            const emptyState = document.getElementById('emptyState');
-            const searchTerm = document.getElementById('searchFilter').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            const severityFilter = document.getElementById('severityFilter').value;
-            
-            let filtered = records.filter(r => {
-                const matchesSearch = !searchTerm || 
-                                    r.nombre.toLowerCase().includes(searchTerm) || 
-                                    r.descripcion.toLowerCase().includes(searchTerm);
-                const matchesStatus = statusFilter === 'todos' || r.estado === statusFilter;
-                const matchesSeverity = severityFilter === 'todas' || r.severidad === severityFilter;
-                return matchesSearch && matchesStatus && matchesSeverity;
-            });
-            
-            filtered.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-            
-            if (filtered.length === 0) {
-                container.innerHTML = '';
-                emptyState.classList.remove('hidden');
-                return;
-            }
-            
-            emptyState.classList.add('hidden');
-            container.innerHTML = filtered.map(record => createRecordCard(record)).join('');
-        }
-
-        function createRecordCard(record) {
-            const fecha = new Date(record.fecha).toLocaleString('es-ES', { 
-                day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' 
-            });
-            
-            const severidadColors = {
-                baja: 'bg-green-100 text-green-800 border-green-200',
-                media: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                alta: 'bg-orange-100 text-orange-800 border-orange-200',
-                critica: 'bg-red-100 text-red-800 border-red-200'
-            };
-            
-            const estadoColors = {
-                pendiente: 'bg-gray-100 text-gray-800',
-                en_proceso: 'bg-blue-100 text-blue-800',
-                resuelto: 'bg-green-100 text-green-800'
-            };
-            
-            const tipoIcon = record.tipo === 'equipo' ? 'fa-cog' : 'fa-building';
-            const anomaliaEmojis = {
-                mecanica: '🔧', electrica: '⚡', seguridad: '🛡️',
-                ambiental: '🌱', operativa: '⚙️', housekeeping: '🧹'
-            };
-
-            const sentidosIcons = {
-                ver: '👁️', oir: '👂', sentir: '✋', oler: '👃'
-            };
-            const sentidosHtml = record.sentidos && record.sentidos.length > 0 
-                ? `<div class="flex gap-1 mb-2 flex-wrap">${record.sentidos.map(s => `<span class="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded border border-purple-200">${sentidosIcons[s] || ''} ${s}</span>`).join('')}</div>`
-                : '';
-            
-            const hasSignature = record.firmaCierre ? '<i class="fas fa-signature text-green-600 ml-1 text-xs" title="Firmado"></i>' : '';
-            const syncBadge = record.syncPending ? '<span class="ml-1 px-1.5 py-0.5 bg-orange-100 text-orange-700 text-[10px] rounded">Sync</span>' : '';
-            const criticalBorder = record.severidad === 'critica' && record.estado !== 'resuelto' ? 'border-l-4 border-l-red-500' : '';
-            
-            return `
-                <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden card-hover animate-fade-in ${criticalBorder}">
-                    <div class="p-3">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="flex items-start gap-2 min-w-0">
-                                <div class="bg-gray-100 p-1.5 rounded flex-shrink-0">
-                                    <i class="fas ${tipoIcon} text-gray-600 text-xs"></i>
-                                </div>
-                                <div class="min-w-0">
-                                    <h3 class="font-semibold text-gray-900 text-sm truncate flex items-center">
-                                        ${record.nombre}
-                                        ${hasSignature}
-                                        ${syncBadge}
-                                    </h3>
-                                    <p class="text-xs text-gray-500 truncate">
-                                        <i class="fas fa-map-marker-alt mr-1"></i>${record.ubicacion}
-                                        ${record.gpsCoords ? `<span class="text-blue-600 ml-1 cursor-pointer" onclick="showMap('${record.gpsCoords}')" title="Mapa"><i class="fas fa-satellite"></i></span>` : ''}
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="flex flex-col gap-1 items-end flex-shrink-0">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-medium border ${severidadColors[record.severidad]}">
-                                    ${record.severidad}
-                                </span>
-                                <select onchange="handleStatusChange(${record.id}, this.value)" 
-                                    class="text-[10px] px-2 py-0.5 rounded border-0 cursor-pointer ${estadoColors[record.estado]}">
-                                    <option value="pendiente" ${record.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
-                                    <option value="en_proceso" ${record.estado === 'en_proceso' ? 'selected' : ''}>En Proceso</option>
-                                    <option value="resuelto" ${record.estado === 'resuelto' ? 'selected' : ''}>Resuelto</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        ${sentidosHtml}
-                        
-                        <div class="grid grid-cols-2 gap-2 mb-2 text-xs">
-                            <div>
-                                <span class="text-gray-500">${anomaliaEmojis[record.tipoAnomalia] || '📋'} ${record.tipoAnomalia}</span>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-gray-500">Por: ${record.reportadoPor}</span>
-                                ${record.createdByEmail ? `<br><span class="text-[10px] text-gray-400">${record.createdByEmail}</span>` : ''}
-                            </div>
-                        </div>
-                        
-                        <p class="text-xs text-gray-700 mb-2 line-clamp-2">${record.descripcion}</p>
-                        
-                        ${record.acciones ? `
-                            <div class="bg-blue-50 p-2 rounded mb-2 text-xs">
-                                <span class="text-blue-600 font-medium">Acción:</span>
-                                <span class="text-blue-800 line-clamp-1">${record.acciones}</span>
-                            </div>
-                        ` : ''}
-                        
-                        ${record.imagen ? `
-                            <div class="mb-2">
-                                <div class="relative group cursor-pointer w-fit" onclick="openImageModal('${record.imagen}')">
-                                    <img src="${record.imagen}" class="h-20 w-auto rounded object-cover border border-gray-200">
-                                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded">
-                                        <i class="fas fa-expand text-white"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : ''}
-                        
-                        ${record.firmaCierre ? `
-                            <div class="mb-2">
-                                <img src="${record.firmaCierre}" class="h-12 rounded border border-gray-200 bg-white">
-                            </div>
-                        ` : ''}
-                        
-                        <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                            <span class="text-[10px] text-gray-400">${fecha}</span>
-                            <div class="flex gap-2">
-                                <button onclick="printRecord(${record.id})" class="text-blue-600 hover:text-blue-800 text-xs" title="Imprimir">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                                ${(isAdmin || record.createdBy === currentUser.uid) ? `
-                                <button onclick="deleteRecord(${record.id})" class="text-red-500 hover:text-red-700 text-xs font-medium" title="${isAdmin ? 'Eliminar (Admin)' : 'Eliminar mi registro'}">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function handleStatusChange(id, newStatus) {
-            if (newStatus === 'resuelto') {
-                currentRecordId = id;
-                document.getElementById('signatureModal').classList.remove('hidden');
-                clearSignature();
-            } else {
-                updateStatus(id, newStatus);
-            }
-        }
-
-        function updateStatus(id, newStatus) {
-            if (!isOnline || !currentUser) {
-                showToast('Sin conexión o sesión', 'warning');
-                return;
-            }
-            
-            const record = records.find(r => r.id === id);
-            const historial = record.historial || [];
-            historial.push({ 
-                fecha: new Date().toISOString(), 
-                accion: newStatus, 
-                usuario: currentUser.displayName || currentUser.email 
-            });
-            
-            recordsRef.child(id).update({ estado: newStatus, historial: historial })
-                .then(() => showToast('Estado actualizado', 'success'))
-                .catch(err => showToast('Error', 'error'));
-        }
-
-        function deleteRecord(id) {
-            const record = records.find(r => r.id === id);
-            if (!record) {
-                showToast('Registro no encontrado', 'error');
-                return;
-            }
-            
-            if (!isAdmin && record.createdBy !== currentUser.uid) {
-                showToast('Solo puedes eliminar tus propios registros', 'error');
-                return;
-            }
-            
-            if (!confirm('¿Eliminar este registro?')) return;
-            if (!isOnline || !currentUser) {
-                showToast('Sin conexión o sesión', 'error');
-                return;
-            }
-            
-            recordsRef.child(id).remove()
-                .then(() => showToast('Eliminado', 'success'))
-                .catch(err => showToast('Error: ' + err.message, 'error'));
-        }
-
-        function printRecord(id) {
-            const record = records.find(r => r.id === id);
-            const w = window.open('', '_blank');
-            w.document.write(`
-                <html>
-                <head>
-                    <title>VOSO #${record.id}</title>
-                    <style>
-                        body { font-family: Arial; padding: 20px; max-width: 600px; margin: 0 auto; }
-                        h1 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; font-size: 18px; }
-                        .field { margin: 10px 0; font-size: 14px; }
-                        .label { font-weight: bold; color: #666; }
-                        img { max-width: 100%; margin-top: 10px; }
-                        .sentidos { background: #f3f4f6; padding: 10px; border-radius: 5px; margin: 10px 0; }
-                    </style>
-                </head>
-                <body>
-                    <h1>Reporte VOSO #${record.id}</h1>
-                    <div class="field"><span class="label">Fecha:</span> ${new Date(record.fecha).toLocaleString()}</div>
-                    <div class="field"><span class="label">Equipo/Área:</span> ${record.nombre}</div>
-                    <div class="field"><span class="label">Ubicación:</span> ${record.ubicacion}</div>
-                    ${record.sentidos && record.sentidos.length > 0 ? `
-                        <div class="sentidos">
-                            <span class="label">Detectado por:</span> ${record.sentidos.join(', ')}
-                        </div>
-                    ` : ''}
-                    <div class="field"><span class="label">Tipo:</span> ${record.tipoAnomalia}</div>
-                    <div class="field"><span class="label">Severidad:</span> ${record.severidad.toUpperCase()}</div>
-                    <div class="field"><span class="label">Estado:</span> ${record.estado}</div>
-                    <div class="field"><span class="label">Descripción:</span><br>${record.descripcion}</div>
-                    ${record.acciones ? `<div class="field"><span class="label">Acciones:</span><br>${record.acciones}</div>` : ''}
-                    ${record.imagen ? `<img src="${record.imagen}">` : ''}
-                </body>
-                </html>
-            `);
-            w.document.close();
-            w.print();
-        }
-
-        function showMap(coords) {
-            const [lat, lng] = coords.split(',');
-            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
-        }
-
-        // ==========================================
-        // EXPORTACIONES
-        // ==========================================
-
-        function exportToExcel() {
-            const data = records.map(r => ({
-                'ID': r.id,
-                'Fecha': new Date(r.fecha).toLocaleString(),
-                'Tipo': r.tipo,
-                'Nombre': r.nombre,
-                'Ubicación': r.ubicacion,
-                'GPS': r.gpsCoords || '',
-                'Sentidos': r.sentidos ? r.sentidos.join(', ') : '',
-                'Anomalía': r.tipoAnomalia,
-                'Severidad': r.severidad,
-                'Estado': r.estado,
-                'Descripción': r.descripcion,
-                'Acciones': r.acciones || '',
-                'Inspector': r.reportadoPor,
-                'Imagen': r.imagen ? 'Sí' : 'No'
-            }));
-            
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "VOSO");
-            
-            ws['!cols'] = [
-                {wch: 15}, {wch: 20}, {wch: 10}, {wch: 25}, {wch: 20},
-                {wch: 20}, {wch: 15}, {wch: 12}, {wch: 12}, {wch: 40},
-                {wch: 30}, {wch: 20}, {wch: 8}
-            ];
-            
-            XLSX.writeFile(wb, `VOSO_${new Date().toISOString().split('T')[0]}.xlsx`);
-            showToast('Excel descargado', 'success');
-        }
-
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            doc.setFontSize(16);
-            doc.text('Reporte VOSO', 20, 20);
-            doc.setFontSize(10);
-            doc.text(`Generado: ${new Date().toLocaleString()}`, 20, 30);
-            doc.text(`Total: ${records.length} registros`, 20, 40);
-            
-            let y = 55;
-            records.slice(0, 25).forEach((r, i) => {
-                if (y > 280) {
-                    doc.addPage();
-                    y = 20;
-                }
-                doc.setFontSize(11);
-                doc.text(`${i+1}. ${r.nombre} (${r.severidad})`, 20, y);
-                doc.setFontSize(9);
-                doc.text(`Estado: ${r.estado} | ${new Date(r.fecha).toLocaleDateString()}`, 20, y+6);
-                y += 18;
-            });
-            
-            doc.save(`VOSO_${new Date().toISOString().split('T')[0]}.pdf`);
-            showToast('PDF descargado', 'success');
-        }
-
-        function exportToJSON() {
-            const dataStr = JSON.stringify(records, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `VOSO_Backup_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast('Backup descargado', 'success');
-        }
-
-        // ==========================================
-        // UTILIDADES
-        // ==========================================
-
-        function filterRecords() { renderRecords(); }
-
-        function filterByStatus(status) {
-            document.getElementById('statusFilter').value = status === 'all' ? 'todos' : status;
-            filterRecords();
-        }
-
-        function clearFilters() {
-            document.getElementById('searchFilter').value = '';
-            document.getElementById('statusFilter').value = 'todos';
-            document.getElementById('severityFilter').value = 'todas';
-            renderRecords();
-        }
-
-        function updateStats() {
-            document.getElementById('totalRecords').textContent = records.length;
-            document.getElementById('pendingRecords').textContent = records.filter(r => r.estado === 'pendiente').length;
-            document.getElementById('resolvedRecords').textContent = records.filter(r => r.estado === 'resuelto').length;
-            document.getElementById('totalEquipos').textContent = new Set(records.map(r => r.nombre)).size;
-        }
-
-        function openImageModal(src) {
-            document.getElementById('modalImage').src = src;
-            document.getElementById('downloadImageBtn').href = src;
-            document.getElementById('imageModal').classList.remove('hidden');
-        }
-
-        function closeImageModal() {
-            document.getElementById('imageModal').classList.add('hidden');
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeImageModal();
-                document.getElementById('signatureModal')?.classList.add('hidden');
-                document.getElementById('profileModal')?.classList.add('hidden');
-                hideNotifications();
-                hideExportMenu();
-                hideUserMenu();
-            }
-        });
-
-        // ==========================================
-        // UTILIDAD DE MIGRACIÓN (EJECUTAR EN CONSOLA)
-        // ==========================================
-        async function migrateData() {
-            if (!isAdmin) {
-                showToast("Solo un administrador puede ejecutar la migración.", "error");
-                return;
-            }
-            
-            if (!confirm("⚠️ ¿Estás seguro de migrar los datos?\n\nEsto moverá todos los registros de 'users/uid/voso_records' al nodo compartido 'voso_records'.\n\nIMPORTANTE: Asegúrate de tener las reglas de Firebase en '.read: true' temporalmente.")) {
-                return;
-            }
-            
-            showToast("Iniciando migración...", "info");
-            try {
-                const usersSnap = await database.ref('users').once('value');
-                const users = usersSnap.val();
-                
-                if (!users) {
-                    console.log("No se encontraron usuarios para migrar.");
-                    return;
-                }
-
-                let totalMigrated = 0;
-                const sharedRef = database.ref('voso_records');
-
-                for (const uid in users) {
-                    const legacyRecords = users[uid].voso_records;
-                    if (legacyRecords) {
-                        for (const recordId in legacyRecords) {
-                            const record = legacyRecords[recordId];
-                            
-                            // Asegurar campos de autoría
-                            if (!record.createdBy) record.createdBy = uid;
-                            if (!record.createdByEmail) record.createdByEmail = users[uid].email || 'unknown@example.com';
-                            
-                            await sharedRef.child(recordId).set(record);
-                            totalMigrated++;
-                        }
-                    }
-                }
-                
-                console.log(`✅ Migración completada. Se movieron ${totalMigrated} registros a voso_records.`);
-                alert(`Migración exitosa: ${totalMigrated} registros movidos.`);
-            } catch (error) {
-                console.error("Error en la migración:", error);
-                alert("Error: Asegúrate de que las reglas de Firebase permitan leer el nodo 'users'.");
-            }
-        }
-    </script>
 </body>
+
 </html>
