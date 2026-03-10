@@ -43,6 +43,8 @@ let isLoginMode = true;
 let map = null;
 let mapMarkers = [];
 let recognition = null;
+let selectedRecords = new Set();
+let editingRecordId = null;
 
 // ==========================================
 // AUTENTICACIÓN
