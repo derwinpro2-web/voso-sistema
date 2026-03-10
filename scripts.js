@@ -876,6 +876,54 @@ document.getElementById('vosoForm').addEventListener('submit', function (e) {
         historial: [{ fecha: new Date().toISOString(), accion: 'creado', usuario: document.getElementById('reportadoPor').value }]
     };
 
+    if (editingRecordId) {
+        // ACTUALIZAR REGISTRO EXISTENTE
+        const recordToUpdate = records.find(r => r.id === editingRecordId);
+        const historial = recordToUpdate.historial || [];
+        historial.push({
+            fecha: new Date().toISOString(),
+            accion: 'actualizado',
+            usuario: document.getElementById('reportadoPor').value
+        });
+
+        const updateData = {
+            tipo: record.tipo,
+            nombre: record.nombre,
+            ubicacion: record.ubicacion,
+            gpsCoords: record.gpsCoords,
+            sentidos: record.sentidos,
+            tipoAnomalia: record.tipoAnomalia,
+            severidad: record.severidad,
+            descripcion: record.descripcion,
+            acciones: record.acciones,
+            imagen: record.imagen || recordToUpdate.imagen, // Mantener la anterior si no hay nueva
+            historial: historial
+        };
+
+        if (!isOnline) {
+            // Manejo offline para edición podría ser complejo, por ahora simplificamos
+            showToast('Modo offline no permite edición segura actualmente', 'warning');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Guardar';
+            return;
+        }
+
+        recordsRef.child(editingRecordId).update(updateData)
+            .then(() => {
+                showToast('Actualizado exitosamente', 'success');
+                cancelEdit();
+            })
+            .catch((error) => {
+                showToast('Error: ' + error.message, 'error');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Guardar';
+            });
+
+        return; // Detener aquí si es edición
+    }
+
     if (!isOnline) {
         record.syncPending = true;
         offlineRecords.push(record);
@@ -912,11 +960,83 @@ document.getElementById('vosoForm').addEventListener('submit', function (e) {
     submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Guardar';
 });
 
-function resetSentidos() {
-    document.getElementById('sentidosSeleccionados').value = '';
-    document.querySelectorAll('.sentido-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
+function editRecord(id) {
+    const record = records.find(r => r.id === id);
+    if (!record) return;
+
+    editingRecordId = id;
+
+    // Poblar formulario
+    setTipo(record.tipo);
+    document.getElementById('nombre').value = record.nombre;
+    document.getElementById('ubicacion').value = record.ubicacion;
+    document.getElementById('gpsCoords').value = record.gpsCoords || '';
+    if (record.gpsCoords) document.getElementById('gpsIndicator').classList.remove('hidden');
+
+    // Sentidos
+    resetSentidos();
+    if (record.sentidos) {
+        record.sentidos.forEach(s => toggleSentido(s));
+    }
+
+    document.getElementById('tipoAnomalia').value = record.tipoAnomalia;
+    setSeveridad(record.severidad);
+    document.getElementById('descripcion').value = record.descripcion;
+    document.getElementById('acciones').value = record.acciones || '';
+    document.getElementById('reportadoPor').value = record.reportadoPor;
+
+    // Imagen
+    if (record.imagen) {
+        const preview = document.getElementById('imagePreview');
+        const placeholder = document.getElementById('uploadPlaceholder');
+        const removeBtn = document.getElementById('removeImage');
+        preview.src = record.imagen;
+        preview.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        removeBtn.classList.remove('hidden');
+    }
+
+    // UI Feedback
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.innerHTML = '<i class="fas fa-sync-alt"></i><span>Actualizar Registro</span>';
+    submitBtn.classList.remove('from-blue-600', 'to-purple-600');
+    submitBtn.classList.add('from-orange-500', 'to-orange-700');
+
+    // Scroll al formulario
+    document.querySelector('.form-sticky').scrollIntoView({ behavior: 'smooth' });
+
+    // Botón cancelar
+    if (!document.getElementById('cancelEditBtn')) {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelEditBtn';
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'w-full bg-gray-200 text-gray-700 text-sm font-semibold py-2 rounded-md mt-2 hover:bg-gray-300 transition';
+        cancelBtn.textContent = 'Cancelar Edición';
+        cancelBtn.onclick = cancelEdit;
+        submitBtn.parentNode.appendChild(cancelBtn);
+    }
+}
+
+function cancelEdit() {
+    editingRecordId = null;
+    const form = document.getElementById('vosoForm');
+    form.reset();
+    removeImage();
+    setSeveridad('media');
+    setTipo('equipo');
+    resetSentidos();
+    document.getElementById('gpsIndicator').classList.add('hidden');
+
+    const displayName = currentUser.displayName || currentUser.email.split('@')[0];
+    document.getElementById('reportadoPor').value = displayName;
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.innerHTML = '<i class="fas fa-save"></i><span>Guardar</span>';
+    submitBtn.classList.add('from-blue-600', 'to-purple-600');
+    submitBtn.classList.remove('from-orange-500', 'to-orange-700');
+
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    if (cancelBtn) cancelBtn.remove();
 }
 
 function createNotification(record) {
@@ -1196,6 +1316,13 @@ function createRecordCard(record) {
                     <div class="p-3">
                         <div class="flex justify-between items-start mb-2">
                             <div class="flex items-start gap-2 min-w-0">
+                                <div class="flex items-center self-stretch pr-1">
+                                    <input type="checkbox" 
+                                        class="voso-checkbox w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                                        onchange="toggleRecordSelection(${record.id}, this.checked)"
+                                        ${selectedRecords.has(record.id) ? 'checked' : ''}
+                                        onclick="event.stopPropagation()">
+                                </div>
                                 <div class="bg-gray-100 p-1.5 rounded flex-shrink-0">
                                     <i class="fas ${tipoIcon} text-gray-600 text-xs"></i>
                                 </div>
@@ -1269,6 +1396,9 @@ function createRecordCard(record) {
                                     <i class="fas fa-print"></i>
                                 </button>
                                 ${(isAdmin || record.createdBy === currentUser.uid) ? `
+                                <button onclick="editRecord(${record.id})" class="text-blue-600 hover:text-blue-800 text-xs" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
                                 <button onclick="deleteRecord(${record.id})" class="text-red-500 hover:text-red-700 text-xs font-medium" title="${isAdmin ? 'Eliminar (Admin)' : 'Eliminar mi registro'}">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
@@ -1417,12 +1547,45 @@ function exportToExcel() {
     showToast('Excel descargado', 'success');
 }
 
+function toggleRecordSelection(id, isSelected) {
+    if (isSelected) {
+        selectedRecords.add(id);
+    } else {
+        selectedRecords.delete(id);
+    }
+    updateSelectionUI();
+}
+
+function updateSelectionUI() {
+    const count = selectedRecords.size;
+    const exportBtn = document.getElementById('exportBtn');
+    if (count > 0) {
+        exportBtn.innerHTML = `<i class="fas fa-check-square mr-1"></i>PDF (${count})`;
+        exportBtn.classList.remove('bg-white/20');
+        exportBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+    } else {
+        exportBtn.innerHTML = `<i class="fas fa-download mr-1"></i><span class="hidden md:inline">Exportar</span><i class="fas fa-chevron-down text-xs ml-1 transition-transform duration-200" id="exportChevron"></i>`;
+        exportBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+        exportBtn.classList.add('bg-white/20');
+    }
+}
+
 async function exportToPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    showToast('Generando reporte PDF...', 'info');
+    // Filter by selection if any
+    const recordsToExport = selectedRecords.size > 0
+        ? records.filter(r => selectedRecords.has(r.id))
+        : records;
+
+    if (recordsToExport.length === 0) {
+        showToast('No hay registros para exportar', 'warning');
+        return;
+    }
+
+    showToast(`Generando reporte PDF (${recordsToExport.length})...`, 'info');
 
     // --- Encabezado ---
     doc.setFillColor(102, 126, 234); // Color gradient-bg inicial
@@ -1447,10 +1610,10 @@ async function exportToPDF() {
     doc.setFont("helvetica", "bold");
     doc.text('Resumen del Reporte', 15, 55);
 
-    const total = records.length;
-    const pending = records.filter(r => r.estado === 'pendiente').length;
-    const resolved = records.filter(r => r.estado === 'resuelto').length;
-    const equipos = new Set(records.map(r => r.nombre)).size;
+    const total = recordsToExport.length;
+    const pending = recordsToExport.filter(r => r.estado === 'pendiente').length;
+    const resolved = recordsToExport.filter(r => r.estado === 'resuelto').length;
+    const equipos = new Set(recordsToExport.map(r => r.nombre)).size;
 
     doc.autoTable({
         startY: 60,
@@ -1466,7 +1629,7 @@ async function exportToPDF() {
     doc.setFont("helvetica", "bold");
     doc.text('Listado Detallado de Registros', 15, doc.lastAutoTable.finalY + 15);
 
-    const tableBody = records.map(r => [
+    const tableBody = recordsToExport.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).map(r => [
         r.nombre,
         `${new Date(r.fecha).toLocaleDateString()}\n${r.ubicacion}`,
         `${r.tipoAnomalia}\n(${r.severidad})`,
@@ -1499,7 +1662,7 @@ async function exportToPDF() {
     });
 
     // --- Sección de Evidencia (Si hay imágenes) ---
-    const recordsWithImages = records.filter(r => r.imagen || r.firmaCierre);
+    const recordsWithImages = recordsToExport.filter(r => r.imagen || r.firmaCierre);
     if (recordsWithImages.length > 0) {
         doc.addPage();
         doc.setFontSize(14);
@@ -1542,6 +1705,11 @@ async function exportToPDF() {
 
     doc.save(`Reporte_VOSO_${new Date().toISOString().split('T')[0]}.pdf`);
     showToast('PDF generado exitosamente', 'success');
+
+    // Opción: limpiar selección tras exportar
+    selectedRecords.clear();
+    updateSelectionUI();
+    renderRecords();
 }
 
 function exportToJSON() {
