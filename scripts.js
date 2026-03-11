@@ -717,7 +717,6 @@ function setTipo(tipo) {
     activeBtn.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
 }
 
-// CORREGIDO: Toggle sentidos - ahora usa data-sentido
 function toggleSentido(sentido) {
     // Buscar el botón por el atributo data-sentido
     const btn = document.querySelector(`.sentido-btn[data-sentido="${sentido}"]`);
@@ -740,6 +739,17 @@ function toggleSentido(sentido) {
 
     input.value = seleccionados.join(',');
     console.log('Sentidos seleccionados:', input.value); // Debug
+}
+
+function resetSentidos() {
+    const input = document.getElementById('sentidosSeleccionados');
+    if (input) {
+        input.value = '';
+    }
+    
+    document.querySelectorAll('.sentido-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
 }
 
 function setSeveridad(level) {
