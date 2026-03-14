@@ -880,7 +880,7 @@ document.getElementById('vosoForm').addEventListener('submit', function (e) {
         imagen: currentImage,
         reportadoPor: document.getElementById('reportadoPor').value,
         fecha: new Date().toISOString(),
-        estado: 'pendiente',
+        estado: 'aviso_creado',
         createdBy: currentUser.uid,
         createdByEmail: currentUser.email,
         historial: [{ fecha: new Date().toISOString(), accion: 'creado', usuario: document.getElementById('reportadoPor').value }]
@@ -1299,6 +1299,7 @@ function createRecordCard(record) {
     };
 
     const estadoColors = {
+        aviso_creado: 'bg-cyan-100 text-cyan-800',
         pendiente: 'bg-gray-100 text-gray-800',
         en_proceso: 'bg-blue-100 text-blue-800',
         resuelto: 'bg-green-100 text-green-800'
@@ -1354,6 +1355,7 @@ function createRecordCard(record) {
                                 </span>
                                 <select onchange="handleStatusChange(${record.id}, this.value)" 
                                     class="text-[10px] px-2 py-0.5 rounded border-0 cursor-pointer ${estadoColors[record.estado]}">
+                                    <option value="aviso_creado" ${record.estado === 'aviso_creado' ? 'selected' : ''}>Aviso Creado</option>
                                     <option value="pendiente" ${record.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
                                     <option value="en_proceso" ${record.estado === 'en_proceso' ? 'selected' : ''}>En Proceso</option>
                                     <option value="resuelto" ${record.estado === 'resuelto' ? 'selected' : ''}>Resuelto</option>
@@ -1621,14 +1623,15 @@ async function exportToPDF() {
     doc.text('Resumen del Reporte', 15, 55);
 
     const total = recordsToExport.length;
+    const avisoCreado = recordsToExport.filter(r => r.estado === 'aviso_creado').length;
     const pending = recordsToExport.filter(r => r.estado === 'pendiente').length;
     const resolved = recordsToExport.filter(r => r.estado === 'resuelto').length;
     const equipos = new Set(recordsToExport.map(r => r.nombre)).size;
 
     doc.autoTable({
         startY: 60,
-        head: [['Total Registros', 'Pendientes', 'Resueltos', 'Equipos/Áreas']],
-        body: [[total, pending, resolved, equipos]],
+        head: [['Total Registros', 'Aviso Creado', 'Pendientes', 'Resueltos', 'Equipos/Áreas']],
+        body: [[total, avisoCreado, pending, resolved, equipos]],
         theme: 'plain',
         styles: { fontSize: 10, halign: 'center' },
         headStyles: { fontStyle: 'bold', textColor: [100, 100, 100] }
@@ -1756,6 +1759,7 @@ function clearFilters() {
 
 function updateStats() {
     document.getElementById('totalRecords').textContent = records.length;
+    document.getElementById('avisoRecords').textContent = records.filter(r => r.estado === 'aviso_creado').length;
     document.getElementById('pendingRecords').textContent = records.filter(r => r.estado === 'pendiente').length;
     document.getElementById('resolvedRecords').textContent = records.filter(r => r.estado === 'resuelto').length;
     document.getElementById('totalEquipos').textContent = new Set(records.map(r => r.nombre)).size;
