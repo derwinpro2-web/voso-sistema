@@ -633,3 +633,62 @@
                 font-size: 1.5rem;
             }
         }
+
+        /* Comment Thread Styles */
+        .comments-list {
+            min-height: 200px;
+            max-height: 50vh;
+        }
+
+        @media (max-width: 639px) {
+            .comments-list {
+                max-height: none;
+            }
+        }
+
+        .comment-bubble {
+            max-width: 85%;
+            animation: commentSlideIn 0.3s ease;
+        }
+
+        .comment-bubble.own {
+            margin-left: auto;
+        }
+
+        .comment-bubble.other {
+            margin-right: auto;
+        }
+
+        @keyframes commentSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .comment-image {
+            max-width: 200px;
+            max-height: 150px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .comment-image:hover {
+            transform: scale(1.03);
+        }
+
+        .comment-badge {
+            min-width: 16px;
+            height: 16px;
+            font-size: 10px;
+            line-height: 16px;
+            text-align: center;
+            border-radius: 99px;
+            padding: 0 4px;
+        }
