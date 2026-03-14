@@ -1917,6 +1917,13 @@ function renderComments(comments) {
                 </div>
                 ${c.text ? `<p class="text-xs leading-relaxed">${escapeHtml(c.text)}</p>` : ''}
                 ${c.image ? `<img src="${c.image}" class="comment-image mt-2" onclick="openImageModal('${c.image}')" alt="Adjunto">` : ''}
+                ${(isOwn || isAdmin) ? `
+                    <div class="flex justify-end mt-1">
+                        <button onclick="deleteComment('${c.id}')" class="${isOwn ? 'text-white/50 hover:text-white/90' : 'text-gray-300 hover:text-red-500'} text-[10px] transition" title="Eliminar">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                ` : ''}
             </div>
         `;
     }).join('');
@@ -2007,4 +2014,19 @@ function removeCommentImage() {
     currentCommentImage = null;
     document.getElementById('commentImagePreviewContainer').classList.add('hidden');
     document.getElementById('commentImageInput').value = '';
+}
+
+function deleteComment(commentId) {
+    if (!currentCommentsRecordId || !currentUser) return;
+    if (!confirm('¿Eliminar este comentario?')) return;
+
+    const commentsRef = database.ref(`comments/${currentCommentsRecordId}`);
+    commentsRef.child(commentId).remove()
+        .then(() => commentsRef.once('value'))
+        .then((snapshot) => {
+            const count = snapshot.numChildren();
+            return recordsRef.child(currentCommentsRecordId).update({ commentCount: count });
+        })
+        .then(() => showToast('Comentario eliminado', 'success'))
+        .catch(err => showToast('Error: ' + err.message, 'error'));
 }
